@@ -12,5 +12,5 @@ pip install git+https://github.com/Accord33/CodeMend.git
 
 ## 使い方
 CodeMendを使用するためには、```DIFY_API_URL```と```DIFY_API_KEY```という環境変数の追加が必要です。<br>
-pipでインストールした後、```codemend```コマンドを使用してCodeMendを実行できます。
+pipでインストールした後、```codemend```コマンドを使用してCodeMendを実行できます。<br>
 現状python3コマンドを実行した時に、エラーを取得し提案を提供します。
