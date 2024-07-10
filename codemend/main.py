@@ -59,7 +59,6 @@ def main():
         cmd = input("$ ")
         if cmd == "exit":
             break
-        cmd = "python3 /Users/sakabekazune/prg/python/AI/CodeMendtest/a.py"
         
         cmds = cmd.split(" ")
         process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
