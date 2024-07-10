@@ -61,28 +61,31 @@ def main():
             break
         
         cmds = cmd.split(" ")
-        process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if cmds[0] == "python3":
+            if not cmds[1].startswith("/"):
+                cmds[1] = os.getcwd() + "/" + cmds[1]
+            process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        while True:
-            output = process.stdout.readline()
-            if output == "" and process.poll() is not None:
-                break
-            if output:
-                print(output.strip())
+            while True:
+                output = process.stdout.readline()
+                if output == "" and process.poll() is not None:
+                    break
+                if output:
+                    print(output.strip())
 
-        stderr = process.communicate()[1]
-        if stderr and cmds[0] == "python3":
-            with open(cmds[1], "r") as r:
-                program = r.read()
-            print("=====================================")
-            print("エラーが発生しました。")
-            
-            send_chat_request(program, stderr.strip())
-            # for chunk in send_chat_request(program, stderr.strip()):
-            #     if 'answer' in chunk:
-            #         response_text = safe_encode(chunk['answer'])
-            #         print(response_text.decode("utf-8"), end='', flush=True)
-            print()
+            stderr = process.communicate()[1]
+            if stderr:
+                with open(cmds[1], "r") as r:
+                    program = r.read()
+                print("=====================================")
+                print("エラーが発生しました。")
+                
+                send_chat_request(program, stderr.strip())
+                # for chunk in send_chat_request(program, stderr.strip()):
+                #     if 'answer' in chunk:
+                #         response_text = safe_encode(chunk['answer'])
+                #         print(response_text.decode("utf-8"), end='', flush=True)
+                print()
 
 if __name__ == "__main__":
     main()
