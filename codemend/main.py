@@ -9,6 +9,21 @@ load_dotenv()
 API_KEY = os.getenv("DIFY_API_KEY")
 API_URL = os.getenv("DIFY_API_URL")
 
+def extract_answer(data_string):
+    # 'data: ' プレフィックスを削除
+    json_string = data_string.replace('data: ', '')
+    
+    # JSON文字列をPythonオブジェクトに変換
+    try:
+        data = json.loads(json_string)
+    except json.JSONDecodeError:
+        return ""
+    
+    # 'answer' キーの値を取得
+    answer = data.get('answer', '')
+    
+    return answer
+
 def send_chat_request(program, error):
     url = API_URL
     headers = {
@@ -17,42 +32,38 @@ def send_chat_request(program, error):
     }
     data = {
         "inputs": {
-            "program":program,
-            "error":error
+            "program": program,
+            "error": error
         },
         "response_mode": "streaming",
         "user": "Master",
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    
-    return response.status_code, response.text
+    with requests.post(url, headers=headers, json=data, stream=True) as response:
+        response.raise_for_status()
+        for line in response.iter_lines():
+            if line:
+                print(extract_answer(line.decode("utf-8")), end='', flush=True)
 
-def d(error_message):
-    print(f"Error: {error_message}")
-    
 def safe_encode(input_string):
     try:
-        # エンコードを試みる
         encoded_string = input_string.encode('utf-8')
         return encoded_string
     except UnicodeEncodeError as e:
-        # エラーが発生した場合、無効な文字をスキップしてエンコードする
         print(f"UnicodeEncodeError: {e}")
         encoded_string = input_string.encode('utf-8', errors='ignore')
         return encoded_string
-
 
 def main():
     while True:
         cmd = input("$ ")
         if cmd == "exit":
             break
+        cmd = "python3 /Users/sakabekazune/prg/python/AI/CodeMendtest/a.py"
         
         cmds = cmd.split(" ")
         process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        # リアルタイムに標準出力を取得して表示
         while True:
             output = process.stdout.readline()
             if output == "" and process.poll() is not None:
@@ -60,22 +71,19 @@ def main():
             if output:
                 print(output.strip())
 
-        # エラー出力も同様に表示し、エラーがあればd関数を実行
         stderr = process.communicate()[1]
         if stderr and cmds[0] == "python3":
-            
             with open(cmds[1], "r") as r:
                 program = r.read()
             print("=====================================")
             print("エラーが発生しました。")
-            # print(program)
-            # print(stderr.strip())
-            _ , response_text = send_chat_request(program, stderr.strip())
             
-            response_text = safe_encode(eval(response_text)["answer"])
+            send_chat_request(program, stderr.strip())
+            # for chunk in send_chat_request(program, stderr.strip()):
+            #     if 'answer' in chunk:
+            #         response_text = safe_encode(chunk['answer'])
+            #         print(response_text.decode("utf-8"), end='', flush=True)
             print()
-            print(response_text.decode("utf-8"))
 
-# 関数の使用例
 if __name__ == "__main__":
     main()
