@@ -45,20 +45,14 @@ def send_chat_request(program, error):
             if line:
                 print(extract_answer(line.decode("utf-8")), end='', flush=True)
 
-def safe_encode(input_string):
-    try:
-        encoded_string = input_string.encode('utf-8')
-        return encoded_string
-    except UnicodeEncodeError as e:
-        print(f"UnicodeEncodeError: {e}")
-        encoded_string = input_string.encode('utf-8', errors='ignore')
-        return encoded_string
-
 def main():
     while True:
         cmd = input("$ ")
         if cmd == "exit":
             break
+        
+        if cmd == "":
+            continue
         
         cmds = cmd.split(" ")
         if cmds[0] == "python3":
@@ -81,11 +75,18 @@ def main():
                 print("エラーが発生しました。")
                 
                 send_chat_request(program, stderr.strip())
-                # for chunk in send_chat_request(program, stderr.strip()):
-                #     if 'answer' in chunk:
-                #         response_text = safe_encode(chunk['answer'])
-                #         print(response_text.decode("utf-8"), end='', flush=True)
-                print()
+        else:
+            try:
+                process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                while True:
+                    output = process.stdout.readline()
+                    if output == "" and process.poll() is not None:
+                        break
+                    if output:
+                        print(output.strip())
+            except FileNotFoundError:
+                print(f"{cmds[0]}: command not found")
+
 
 if __name__ == "__main__":
     main()
