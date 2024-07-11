@@ -101,6 +101,7 @@ def main():
                 
                 # エラーを解析のためにAPIに送信
                 send_chat_request(program, stderr.strip())
+                print("=====================================")
         else:
             try:
                 # Python以外のコマンドを実行
