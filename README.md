@@ -1,5 +1,7 @@
 <h1 align="center">CodeMend</h1>
 
+!["実際の使用画面"](./pic/creenshot.png)
+
 
 # 🌟**はじめに**
 
