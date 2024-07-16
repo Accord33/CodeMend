@@ -1,68 +1,81 @@
-import requests
 import os
-import json
 import subprocess
-from dotenv import load_dotenv
+from typing import Any, List, Optional
+from langchain_core.language_models import LLM
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnableSequence
+import google.generativeai as genai
 
-# .envファイルから環境変数を読み込む
-load_dotenv()
+# Google AI API keyを環境変数から設定
+if "GOOGLE_API_KEY" not in os.environ:
+    os.environ["GOOGLE_API_KEY"] = "your-google-api-key-here"
 
-# 環境変数からAPIキーとURLを取得
-API_KEY = os.getenv("DIFY_API_KEY")
-API_URL = os.getenv("DIFY_API_URL")
+# Gemini Flashの設定
+genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
-def extract_answer(data_string):
-    """
-    APIから受け取ったデータ文字列から回答を抽出する。
-
-    Args:
-        data_string (str): JSONデータを含む文字列。
-
-    Returns:
-        str: 抽出された回答、または解析に失敗した場合は空文字列。
-    """
-    # 'data: ' プレフィックスを削除
-    json_string = data_string.replace('data: ', '')
+class GeminiFlashLLM(LLM):
+    model: str = "gemini-1.5-flash"
     
-    # JSON文字列をPythonオブジェクトに変換
-    try:
-        data = json.loads(json_string)
-    except json.JSONDecodeError:
-        return ""
-    
-    # 'answer' キーの値を取得
-    answer = data.get('answer', '')
-    
-    return answer
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        model = genai.GenerativeModel(self.model)
+        response = model.generate_content(prompt)
+        return response.text
 
-def send_chat_request(program, error):
+    @property
+    def _llm_type(self) -> str:
+        return "gemini-flash"
+
+# プロンプトテンプレートの定義
+template = """
+You are an AI.
+Your role is to improve the programming experience for the user.
+Your main job is to program and, when an error is given, to suggest the content of the error and how to improve the program.
+Since the user is Japanese, please make all suggestions in Japanese.
+If you ignore the above conditions, there will be a penalty.
+
+This is a template. Please make suggestions based on this template.
+
+エラーの名前: please tell us what error is occurring.
+エラーの内容: please briefly explain the reason for the error.
+修正箇所: please clarify which line is wrong and why the error occurred.
+修正例: please tell us how to fix the problem.
+
+このようにして、プログラムを正しく実行することができます。
+
+プログラム:
+{program}
+
+エラー:
+{error}
+"""
+
+# プロンプトテンプレートの作成
+prompt = PromptTemplate(
+    input_variables=["program", "error"],
+    template=template
+)
+
+# LLMの作成
+llm = GeminiFlashLLM()
+
+# RunnableSequenceの作成
+chain = RunnableSequence(prompt | llm)
+
+def generate_suggestion(program, error):
     """
-    プログラムとエラーの詳細をAPIに送信する。
-
-    Args:
-        program (str): エラーを引き起こしたプログラムコード。
-        error (str): エラーメッセージ。
+    プログラムとエラーメッセージを入力として受け取り、
+    AIによる修正提案を生成して返す関数
     """
-    url = API_URL
-    headers = {
-        'Authorization': f'Bearer {API_KEY}',
-        'Content-Type': 'application/json'
-    }
-    data = {
-        "inputs": {
-            "program": program,
-            "error": error
-        },
-        "response_mode": "streaming",
-        "user": "Master",
-    }
+    return chain.invoke({"program": program, "error": error})
 
-    # POSTリクエストを送信し、レスポンスをストリーミングで受け取る
-    with requests.post(url, headers=headers, json=data, stream=True) as response:
-        response.raise_for_status()
-        for line in response.iter_lines():
-            if line:
-                print(extract_answer(line.decode("utf-8")), end='', flush=True)
+
 
 def main():
     """
@@ -100,7 +113,8 @@ def main():
                 print("エラーが発生しました。")
                 
                 # エラーを解析のためにAPIに送信
-                send_chat_request(program, stderr.strip())
+                suggestion = generate_suggestion(program, stderr.strip())
+                print(suggestion)
                 print("=====================================")
         else:
             try:

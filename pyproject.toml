@@ -11,6 +11,8 @@ requests = "^2.32.3"
 python-dotenv = "^1.0.1"
 
 
+langchain = "^0.2.8"
+google-generativeai = "^0.7.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

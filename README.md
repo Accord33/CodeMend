@@ -28,20 +28,21 @@ pip install git+https://github.com/Accord33/CodeMend.git
 ```
 # 📝 使い方
 
-CodeMendを使用するためには、DIFY_API_URLとDIFY_API_KEYという環境変数の追加が必要です。pipでインストールした後、codemendコマンドを使用してCodeMendを実行できます。
+CodeMendを使用するためには、GeminiのAPIキーが必要です。<br>
+pipでインストールした後、codemendコマンドを使用してCodeMendを実行できます。
 
 環境変数の設定:
-DIFY_API_URLとDIFY_API_KEYを環境変数に設定します。
+```GOOGLE_API_KEY```を設定してください。
 CodeMendの実行:
 python3コマンドを実行すると、エラーが発生した場合に提案を提供します。
 それ以外の通常のコマンドに関しては、通常のように動作します。
-🤝 コントリビューション
+
+# 🤝 コントリビューション
 
 CodeMendはオープンソースプロジェクトです。皆さんのコントリビューションを歓迎します！
 
 バグ報告や機能リクエスト: Issueページからお願いします。
 プルリクエスト: 大歓迎です。
-コントリビューションガイドラインについては、CONTRIBUTING.mdを参照してください。
 
 # 📄 ライセンス
 
