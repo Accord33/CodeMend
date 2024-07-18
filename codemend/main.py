@@ -82,52 +82,55 @@ def main():
     ユーザー入力を処理し、コマンドを実行するメイン関数。
     """
     while True:
-        cmd = input("$ ")
-        if cmd == "exit":
-            break
-        
-        if cmd == "":
-            continue
-        
-        cmds = cmd.split(" ")
-        if cmds[0] == "python3":
-            # スクリプトパスが絶対パスであることを確認
-            if not cmds[1].startswith("/"):
-                cmds[1] = os.getcwd() + "/" + cmds[1]
+        try:
+            cmd = input("$ ")
+            if cmd == "exit":
+                break
             
-            # Pythonスクリプトを実行
-            process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-            while True:
-                output = process.stdout.readline()
-                if output == "" and process.poll() is not None:
-                    break
-                if output:
-                    print(output.strip())
-
-            stderr = process.communicate()[1]
-            if stderr:
-                with open(cmds[1], "r") as r:
-                    program = r.read()
-                print("=====================================")
-                print("エラーが発生しました。")
+            if cmd == "":
+                continue
+            
+            cmds = cmd.split(" ")
+            if cmds[0] == "python3":
+                # スクリプトパスが絶対パスであることを確認
+                if not cmds[1].startswith("/"):
+                    cmds[1] = os.getcwd() + "/" + cmds[1]
                 
-                # エラーを解析のためにAPIに送信
-                suggestion = generate_suggestion(program, stderr.strip())
-                print(suggestion)
-                print("=====================================")
-        else:
-            try:
-                # Python以外のコマンドを実行
+                # Pythonスクリプトを実行
                 process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
                 while True:
                     output = process.stdout.readline()
                     if output == "" and process.poll() is not None:
                         break
                     if output:
                         print(output.strip())
-            except FileNotFoundError:
-                print(f"{cmds[0]}: command not found")
+
+                stderr = process.communicate()[1]
+                if stderr:
+                    with open(cmds[1], "r") as r:
+                        program = r.read()
+                    print("=====================================")
+                    print("エラーが発生しました。")
+                    
+                    # エラーを解析のためにAPIに送信
+                    suggestion = generate_suggestion(program, stderr.strip())
+                    print(suggestion)
+                    print("=====================================")
+            else:
+                try:
+                    # Python以外のコマンドを実行
+                    process = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    while True:
+                        output = process.stdout.readline()
+                        if output == "" and process.poll() is not None:
+                            break
+                        if output:
+                            print(output.strip())
+                except FileNotFoundError:
+                    print(f"{cmds[0]}: command not found")
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
     main()
